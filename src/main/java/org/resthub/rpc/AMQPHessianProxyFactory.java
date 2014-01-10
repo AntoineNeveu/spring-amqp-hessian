@@ -23,6 +23,7 @@ import java.lang.reflect.Proxy;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
@@ -86,6 +87,8 @@ public class AMQPHessianProxyFactory implements InitializingBean, DisposableBean
     private long readTimeout = -1;
     
     private boolean compressed;
+    
+    private boolean acknowledges;
 
     /**
      * Creates the new proxy factory.
@@ -158,6 +161,22 @@ public class AMQPHessianProxyFactory implements InitializingBean, DisposableBean
     {
         readTimeout = timeout;
     }
+    
+    /**
+     * Get the acknowledge mode (default false)
+     * @return
+     */
+    public Boolean getAcknowledges() {
+		return acknowledges;
+	}
+
+    /**
+     * Set the acknowledge mode (default false)
+     * @param acknowledges
+     */
+	public void setAcknowledges(Boolean acknowledges) {
+		this.acknowledges = acknowledges;
+	}
 
     /**
      * Indicates if the requests/responses should be compressed.
@@ -450,6 +469,9 @@ public class AMQPHessianProxyFactory implements InitializingBean, DisposableBean
                 listener = new SimpleMessageListenerContainer(this.connectionFactory);
                 listener.setMessageListener(this.template);
                 listener.setQueues(replyQueue);
+                if (! this.acknowledges){
+                	listener.setAcknowledgeMode(AcknowledgeMode.NONE);
+                }
                 listener.start();
             }
         }

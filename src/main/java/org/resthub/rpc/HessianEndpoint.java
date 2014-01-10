@@ -18,6 +18,7 @@ package org.resthub.rpc;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.Connection;
@@ -50,6 +51,7 @@ public class HessianEndpoint implements InitializingBean, DisposableBean
     private ConnectionFactory connectionFactory;
     private SimpleMessageListenerContainer listenerContainer;
     private AmqpAdmin admin;
+    private boolean acknowledges = false;
     
     private int concurentConsumers;
 
@@ -163,8 +165,24 @@ public class HessianEndpoint implements InitializingBean, DisposableBean
     public void setConcurentConsumers(int concurentConsumers) {
         this.concurentConsumers = concurentConsumers;
     }
+    
+    /**
+     * Get the acknowledge mode (default false)
+     * @return
+     */
+    public Boolean getAcknowledges() {
+		return acknowledges;
+	}
 
     /**
+     * Set the acknowledge mode (default false)
+     * @param acknowledges
+     */
+	public void setAcknowledges(Boolean acknowledges) {
+		this.acknowledges = acknowledges;
+	}
+
+	/**
      * Sets the serializer send collection java type.
      */
     public void setSendCollectionType(boolean sendType)
@@ -249,6 +267,9 @@ public class HessianEndpoint implements InitializingBean, DisposableBean
         listenerContainer.setConnectionFactory(connectionFactory);
         listenerContainer.setQueueNames(getRequestQueueName(serviceAPI));
         listenerContainer.setMessageListener(listenerAdapter);
+        if (!this.acknowledges){
+        	listenerContainer.setAcknowledgeMode(AcknowledgeMode.NONE);
+        }
         if (this.concurentConsumers > 0){
             listenerContainer.setConcurrentConsumers(concurentConsumers);
         }
